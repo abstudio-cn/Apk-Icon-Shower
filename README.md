@@ -39,41 +39,7 @@
 - 自动化测试钩子：环境变量 `APKICONSHOWER_PERSONALIZE_KEY` 可把“系统主题”指向另一个注册表键，
   便于在**不改动真实系统设置**的前提下验证深色/浅色两种外观。
 
-## 构建
 
-```powershell
-# 需要 VS18 + 静态 Qt（默认 C:\Qt\6.9.3-static-msvc2022_64）
-powershell -File tools\build.ps1 -Reconfigure
-```
-
-## 自检工具（tools/ 里的脚本都在用）
-
-| 工具 | 作用 |
-| --- | --- |
-| `build\apkicon_dump.exe <apk> [out.png]` | 逐阶段打印 APK 解析过程（包名/名称/图标来源），并导出图标 PNG |
-| `build\shellext_test.exe <dll> <apk>` | 进程内直接调用 shell 扩展的 COM 接口，校验 HICON |
-| `build\shell_icon_check.exe <apk> [.ext]` | 走 Shell API：类型名、默认图标、命令、是否加载了图标处理器，并与 APK 自带图标比色 |
-| `tools\capture.ps1` / `shot_details.ps1` | PrintWindow 抓单个窗口（不依赖窗口是否在前台） |
-| `tools\focus_shot.ps1` / `verify_flow.ps1` | 置前 + 模拟键鼠（SendInput/UIA）+ 全屏截图 |
-
-## 三个必须知道的 Windows 细节
-
-1. **图标处理器 CLSID 必须在 HKLM**：`HKLM\Software\Classes\CLSID\{9B7E5C42-...}\InprocServer32` 指向 `ApkIconShowerShell.dll`。
-   只写 HKCU 时资源管理器**不会**加载它，表现为「类型名正确但图标空白、`shellex\IconHandler` 查不到」。
-2. **陈旧的 `FileExts\.apk` 会整体阻断关联**：用户侧若存在
-   `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.apk`（没有有效 UserChoice），
-   HKCU\Software\Classes 的关联不会被采用。注册时本程序会先把它**备份**到
-   `HKCU\Software\ApkIconShower\Backup\FileExts_apk` 再移除，取消注册时还原。
-3. **`IExtractIconW::GetIconLocation` 必须回传该文件自己的路径**。设了 `GIL_NOTFILENAME` 之后，shell 会把
-   `pszIconFile` 里的字符串当作图标缓存的键、并原样传给 `Extract(pszFile)`。如果这里留空（只靠
-   `IPersistFile::Load` 记住路径），同一进程内**所有 .apk 会共用第一个被解析的图标**——表现为
-   「三个不同的 APK 显示同一个图标」。自检：`build\icon_multi.exe a.apk b.apk c.apk`（同一进程内连查多个文件，
-   各文件图标色值必须不同）。
-
-## 排障工具
-
-- 怀疑图标不对时先跑 `icon_multi.exe`：同一进程内各文件图标**色值必须不同**；若全相同，问题在处理器接口，
-  若只有资源管理器不对，问题在图标缓存。
 - 处理器调用日志：在 `%TEMP%` 建空文件 `apkIconShower_debug.on`，之后每次调用会写
   `%TEMP%\apkIconShower_shellex.log`（记录 Load / GetIconLocation / Extract 收到的路径）；删掉标记文件即关闭。
 
