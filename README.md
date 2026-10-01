@@ -77,8 +77,3 @@ powershell -File tools\build.ps1 -Reconfigure
 - 处理器调用日志：在 `%TEMP%` 建空文件 `apkIconShower_debug.on`，之后每次调用会写
   `%TEMP%\apkIconShower_shellex.log`（记录 Load / GetIconLocation / Extract 收到的路径）；删掉标记文件即关闭。
 
-## 验收结果（target.apk）
-
-- 解析：`com.dollarcityapps.mp4player` / `Flash Player` / 图标 `res/AR.PNG` 512×512（来源 manifest）
-- shell_icon_check：类型名 `安卓应用安装包`，图标平均色距离 **0.0**，`RESULT=PASS`
-- 截图：资源管理器（图标 + 类型列）、桌面图标、双击后的「选择打开方式」窗口、添加应用后的列表
